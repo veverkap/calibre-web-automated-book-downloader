@@ -304,10 +304,10 @@ calibre-web-go/
 ### Performance Improvements
 
 #### 1. Memory Efficiency
-- **Go**: Typically 2-6x lower memory footprint than Python
+- **Go**: Typically 2.5-5x lower memory footprint than Python (depending on workload)
 - **Impact**: 
   - Current Python app uses ~200-300MB base (before Selenium)
-  - Go version could run in ~50-100MB (2-6x improvement)
+  - Go version could run in ~50-100MB (2.5-5x improvement)
   - Better container density in orchestrated environments
 
 #### 2. CPU Performance
@@ -521,7 +521,7 @@ calibre-web-go/
 ## Success Metrics
 
 ### Performance Goals
-- **Memory**: <100MB base (vs ~250MB Python)
+- **Memory**: <100MB base (vs ~250MB Python, 2.5x+ improvement)
 - **CPU**: <50% of Python under same load
 - **Startup**: <1 second (vs ~3 seconds)
 - **Throughput**: 2x more concurrent downloads

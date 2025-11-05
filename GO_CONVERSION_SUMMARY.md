@@ -20,7 +20,7 @@
 
 | Metric | Python (Current) | Go (Expected) | Improvement |
 |--------|------------------|---------------|-------------|
-| Memory Usage | ~250MB | ~50-100MB | **5x better** |
+| Memory Usage | ~250MB | ~50-100MB | **2.5-5x better** |
 | CPU Performance | Baseline | 3-10x faster | **3-10x better** |
 | Startup Time | 1-3 seconds | <100ms | **10-30x faster** |
 | Binary Size | N/A (+ runtime) | 15-30MB static | **Simpler** |
