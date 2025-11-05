@@ -129,7 +129,7 @@ calibre-web-go/
 - **Logging**: `github.com/sirupsen/logrus` or `go.uber.org/zap`
 - **Priority Queue**: Custom implementation or `container/heap` (stdlib)
 - **Environment Config**: `github.com/kelseyhightower/envconfig` or `github.com/spf13/viper`
-- **Password Hashing**: `golang.org/x/crypto/bcrypt` (compatible with Werkzeug)
+- **Password Hashing**: `golang.org/x/crypto/pbkdf2` (for Werkzeug PBKDF2-SHA256 compatibility)
 - **DoH**: `github.com/miekg/dns`
 
 ### Phase 2: Core Components (Est: 4-6 weeks)
@@ -245,9 +245,10 @@ calibre-web-go/
   - Session management
 - **Complexity**: MEDIUM
 - **Key Considerations**:
-  - Werkzeug uses PBKDF2-SHA256 with custom format
-  - Need to parse: `pbkdf2:sha256:260000$<salt>$<hash>`
-  - Go's `x/crypto/pbkdf2` should handle this
+  - Werkzeug uses PBKDF2-SHA256 with custom format: `pbkdf2:sha256:260000$<salt>$<hash>`
+  - Need to parse format, extract salt and stored hash
+  - Use `golang.org/x/crypto/pbkdf2` with SHA256, 260000 iterations (default in Werkzeug 2.x)
+  - Compare computed hash with stored hash using constant-time comparison
 
 #### 4.3 Template Rendering (Week 2)
 - **Tasks**:
