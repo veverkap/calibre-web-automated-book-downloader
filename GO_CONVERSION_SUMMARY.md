@@ -38,8 +38,8 @@
    - More testing required
 
 3. **Authentication** (MEDIUM) - Werkzeug password hash compatibility
-   - Format: `pbkdf2:sha256:260000$<salt>$<hash>`
-   - Go's `x/crypto/pbkdf2` should work
+   - Werkzeug format: `pbkdf2:sha256:260000$<salt>$<hash>`
+   - Go's `x/crypto/pbkdf2` provides compatible implementation
 
 4. **Feature Parity** (MEDIUM) - Ensuring all features work identically
    - Comprehensive testing needed

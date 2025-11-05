@@ -245,7 +245,8 @@ calibre-web-go/
   - Session management
 - **Complexity**: MEDIUM
 - **Key Considerations**:
-  - Werkzeug uses PBKDF2-SHA256 with custom format: `pbkdf2:sha256:260000$<salt>$<hash>`
+  - Werkzeug uses PBKDF2-SHA256 with custom format: `pbkdf2:sha256:260000$salt123$abc...def`
+  - Format structure: `method:algorithm:iterations$base64_salt$base64_hash`
   - Need to parse format, extract salt and stored hash
   - Use `golang.org/x/crypto/pbkdf2` with SHA256, 260000 iterations (default in Werkzeug 2.x)
   - Compare computed hash with stored hash using constant-time comparison
@@ -303,10 +304,10 @@ calibre-web-go/
 ### Performance Improvements
 
 #### 1. Memory Efficiency
-- **Go**: Typically 2-5x lower memory footprint than Python
+- **Go**: Typically 2-6x lower memory footprint than Python
 - **Impact**: 
   - Current Python app uses ~200-300MB base (before Selenium)
-  - Go version could run in ~50-100MB
+  - Go version could run in ~50-100MB (2-6x improvement)
   - Better container density in orchestrated environments
 
 #### 2. CPU Performance
