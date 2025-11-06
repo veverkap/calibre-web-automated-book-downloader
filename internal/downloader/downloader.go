@@ -14,11 +14,8 @@ import (
 )
 
 const (
-	// minDownloadRatio is the minimum ratio of downloaded bytes to expected size
-	// to consider the download successful (10%)
-	minDownloadRatio = 0.1
-	// expectedSizeRatio is the expected ratio of downloaded bytes to expected size
-	// to validate the download (90%)
+	// expectedSizeRatio is the minimum ratio of downloaded bytes to expected size
+	// required to consider the download successful (90%)
 	expectedSizeRatio = 0.9
 )
 
@@ -155,9 +152,8 @@ func DownloadURL(ctx context.Context, cfg *config.Config, link string, size stri
 		}
 	}
 
-	// Check if we got significantly less data than expected
-	// If downloaded < 9% of expected (0.1 * totalSize < 0.9 * totalSize means downloaded < totalSize)
-	// This detects when we receive an error page instead of the actual file
+	// Validate that we downloaded enough data
+	// If we received less than 90% of the expected size, check if it's an error page
 	if totalSize > 0 && downloaded < totalSize*expectedSizeRatio {
 		contentType := resp.Header.Get("Content-Type")
 		if strings.HasPrefix(contentType, "text/html") {
