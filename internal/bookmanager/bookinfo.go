@@ -426,8 +426,8 @@ func getDownloadURL(ctx context.Context, cfg *config.Config, link, title string)
 			// Check for countdown
 			if countdown := doc.Find("span.js-partner-countdown"); countdown.Length() > 0 {
 				// TODO: Implement wait logic with cancellation
-				// For now, we'll just try to get the URL after waiting
-				return getDownloadURL(ctx, cfg, link, title)
+				// For now, return error to avoid infinite recursion
+				return "", fmt.Errorf("download requires wait countdown - not yet implemented")
 			}
 		}
 	} else {

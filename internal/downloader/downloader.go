@@ -13,6 +13,15 @@ import (
 	"github.com/veverkap/calibre-web-automated-book-downloader/internal/config"
 )
 
+const (
+	// minDownloadRatio is the minimum ratio of downloaded bytes to expected size
+	// to consider the download successful (10%)
+	minDownloadRatio = 0.1
+	// expectedSizeRatio is the expected ratio of downloaded bytes to expected size
+	// to validate the download (90%)
+	expectedSizeRatio = 0.9
+)
+
 // HTTPClient interface for testing
 type HTTPClient interface {
 	Do(req *http.Request) (*http.Response, error)
@@ -147,7 +156,7 @@ func DownloadURL(ctx context.Context, cfg *config.Config, link string, size stri
 	}
 
 	// Check if we got HTML instead of binary content
-	if downloaded*0.1 < totalSize*0.9 {
+	if downloaded*minDownloadRatio < totalSize*expectedSizeRatio {
 		contentType := resp.Header.Get("Content-Type")
 		if strings.HasPrefix(contentType, "text/html") {
 			return nil, fmt.Errorf("failed to download content for %s. Found HTML content instead", link)
