@@ -149,28 +149,27 @@ func (bq *BookQueue) GetNext() (string, chan struct{}, bool) {
 	bq.mu.Lock()
 	defer bq.mu.Unlock()
 
-	if bq.queue.Len() == 0 {
-		return "", nil, false
+	// Loop until we find a non-cancelled item or the queue is empty
+	for bq.queue.Len() > 0 {
+		item := heap.Pop(bq.queue).(*QueueItem)
+		bookID := item.BookID
+
+		// Check if book was cancelled while in queue
+		if status, exists := bq.status[bookID]; exists && status == StatusCancelled {
+			// Skip cancelled items and continue to next
+			continue
+		}
+
+		// Create cancellation channel for this download
+		cancelChan := make(chan struct{})
+		bq.cancelFlags[bookID] = cancelChan
+		bq.activeDownloads[bookID] = true
+
+		return bookID, cancelChan, true
 	}
 
-	item := heap.Pop(bq.queue).(*QueueItem)
-	bookID := item.BookID
-
-	// Check if book was cancelled while in queue
-	if status, exists := bq.status[bookID]; exists && status == StatusCancelled {
-		// Recursively get next non-cancelled item
-		bq.mu.Unlock()
-		nextID, cancelChan, ok := bq.GetNext()
-		bq.mu.Lock()
-		return nextID, cancelChan, ok
-	}
-
-	// Create cancellation channel for this download
-	cancelChan := make(chan struct{})
-	bq.cancelFlags[bookID] = cancelChan
-	bq.activeDownloads[bookID] = true
-
-	return bookID, cancelChan, true
+	// Queue is empty or all items were cancelled
+	return "", nil, false
 }
 
 // updateStatus is an internal method to update status and timestamp

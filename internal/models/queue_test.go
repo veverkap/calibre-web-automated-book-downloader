@@ -269,3 +269,30 @@ func TestBookQueueUpdateDownloadPath(t *testing.T) {
 		t.Errorf("Expected path '%s', got '%s'", path, *queuedBook.DownloadPath)
 	}
 }
+
+func TestBookQueueGetNextSkipsCancelled(t *testing.T) {
+	queue := NewBookQueue(1 * time.Hour)
+	
+	// Add multiple books
+	book1 := &BookInfo{ID: "test-1", Title: "Book 1"}
+	book2 := &BookInfo{ID: "test-2", Title: "Book 2"}
+	book3 := &BookInfo{ID: "test-3", Title: "Book 3"}
+	
+	queue.Add("test-1", book1, 1)
+	queue.Add("test-2", book2, 2)
+	queue.Add("test-3", book3, 3)
+	
+	// Cancel the first and second books
+	queue.CancelDownload("test-1")
+	queue.CancelDownload("test-2")
+	
+	// GetNext should skip cancelled books and return test-3
+	bookID, _, ok := queue.GetNext()
+	if !ok {
+		t.Fatal("Expected to get a book from queue")
+	}
+	
+	if bookID != "test-3" {
+		t.Errorf("Expected book ID 'test-3', got '%s'", bookID)
+	}
+}
