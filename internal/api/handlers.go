@@ -8,28 +8,42 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/veverkap/calibre-web-automated-book-downloader/internal/auth"
 	"github.com/veverkap/calibre-web-automated-book-downloader/internal/config"
+	"github.com/veverkap/calibre-web-automated-book-downloader/internal/downloader"
 	"github.com/veverkap/calibre-web-automated-book-downloader/internal/models"
 	"go.uber.org/zap"
 )
 
 // Handler holds the API handler dependencies
 type Handler struct {
-	config    *config.Config
-	logger    *zap.Logger
-	auth      *auth.Authenticator
-	bookQueue *models.BookQueue
+	config     *config.Config
+	logger     *zap.Logger
+	auth       *auth.Authenticator
+	bookQueue  *models.BookQueue
+	workerPool *downloader.WorkerPool
 }
 
 // NewHandler creates a new API handler
 func NewHandler(cfg *config.Config, logger *zap.Logger) *Handler {
 	authenticator := auth.NewAuthenticator(cfg.CWADBPath)
 	bookQueue := models.NewBookQueue(time.Duration(cfg.StatusTimeout) * time.Second)
+	workerPool := downloader.NewWorkerPool(cfg, logger, bookQueue)
+	
+	// Start worker pool
+	workerPool.Start()
 	
 	return &Handler{
-		config:    cfg,
-		logger:    logger,
-		auth:      authenticator,
-		bookQueue: bookQueue,
+		config:     cfg,
+		logger:     logger,
+		auth:       authenticator,
+		bookQueue:  bookQueue,
+		workerPool: workerPool,
+	}
+}
+
+// Shutdown gracefully shuts down the handler and its dependencies
+func (h *Handler) Shutdown() {
+	if h.workerPool != nil {
+		h.workerPool.Stop()
 	}
 }
 
