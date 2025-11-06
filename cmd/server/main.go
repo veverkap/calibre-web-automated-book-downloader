@@ -76,6 +76,9 @@ func main() {
 
 	logger.Info("Shutting down server...")
 
+	// Shutdown handler (stops worker pool)
+	handler.Shutdown()
+
 	// Graceful shutdown with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()

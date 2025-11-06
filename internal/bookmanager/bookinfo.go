@@ -369,7 +369,7 @@ func DownloadBook(ctx context.Context, cfg *config.Config, bookInfo *models.Book
 			size = *bookInfo.Size
 		}
 
-		buffer, err := downloader.DownloadURL(ctx, cfg, downloadURL, size, progressCallback)
+		buffer, err := downloader.DownloadURLToBuffer(ctx, cfg, downloadURL, size, progressCallback)
 		if err != nil {
 			continue
 		}
