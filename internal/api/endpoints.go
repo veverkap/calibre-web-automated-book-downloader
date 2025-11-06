@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"mime"
 	"net/http"
 	"strconv"
 
@@ -146,7 +147,9 @@ func (h *Handler) handleLocalDownload(w http.ResponseWriter, r *http.Request) {
 		filename = filename + "." + *book.Format
 	}
 
-	w.Header().Set("Content-Disposition", "attachment; filename=\""+filename+"\"")
+	// Escape filename to prevent header injection
+	escapedFilename := mime.QEncoding.Encode("utf-8", filename)
+	w.Header().Set("Content-Disposition", "attachment; filename*=utf-8''"+escapedFilename)
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("Content-Length", fmt.Sprintf("%d", len(data)))
 	

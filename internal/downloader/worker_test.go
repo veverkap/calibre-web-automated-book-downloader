@@ -1,6 +1,7 @@
 package downloader
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -13,11 +14,18 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	// Test timeout for waiting for downloads
+	testTimeout = 10 * time.Second
+	// Polling interval for checking status
+	testPollInterval = 100 * time.Millisecond
+)
+
 func TestWorkerPoolIntegration(t *testing.T) {
 	// Create test HTTP servers for downloads
 	content1 := []byte("test book content 1")
 	server1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Length", "19")
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(content1)))
 		w.WriteHeader(http.StatusOK)
 		w.Write(content1)
 	}))
@@ -25,7 +33,7 @@ func TestWorkerPoolIntegration(t *testing.T) {
 
 	content2 := []byte("test book content 2")
 	server2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Length", "19")
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(content2)))
 		w.WriteHeader(http.StatusOK)
 		w.Write(content2)
 	}))
@@ -81,43 +89,37 @@ func TestWorkerPoolIntegration(t *testing.T) {
 	queue.Add("book-2", book2, 0)
 
 	// Wait for downloads to complete (with timeout)
-	timeout := time.After(10 * time.Second)
-	ticker := time.NewTicker(100 * time.Millisecond)
+	timeout := time.After(testTimeout)
+	ticker := time.NewTicker(testPollInterval)
 	defer ticker.Stop()
 
-	book1Complete := false
-	book2Complete := false
+	checkComplete := func() bool {
+		status := queue.GetStatus()
+		
+		// Check if both books are available
+		_, book1Available := status[models.StatusAvailable]["book-1"]
+		_, book2Available := status[models.StatusAvailable]["book-2"]
+		
+		// Check for errors
+		if _, exists := status[models.StatusError]["book-1"]; exists {
+			t.Fatal("Book 1 download failed")
+		}
+		if _, exists := status[models.StatusError]["book-2"]; exists {
+			t.Fatal("Book 2 download failed")
+		}
+		
+		return book1Available && book2Available
+	}
 
-	for {
+	for !checkComplete() {
 		select {
 		case <-timeout:
 			t.Fatal("Timeout waiting for downloads to complete")
 		case <-ticker.C:
-			status := queue.GetStatus()
-			
-			// Check if both books are in available or error status
-			if _, exists := status[models.StatusAvailable]["book-1"]; exists {
-				book1Complete = true
-			}
-			if _, exists := status[models.StatusError]["book-1"]; exists {
-				t.Fatal("Book 1 download failed")
-			}
-			
-			if _, exists := status[models.StatusAvailable]["book-2"]; exists {
-				book2Complete = true
-			}
-			if _, exists := status[models.StatusError]["book-2"]; exists {
-				t.Fatal("Book 2 download failed")
-			}
-			
-			if book1Complete && book2Complete {
-				// Success! Both downloads completed
-				goto completed
-			}
+			// Continue checking
 		}
 	}
 
-completed:
 	t.Log("Both downloads completed successfully")
 
 	// Verify files exist

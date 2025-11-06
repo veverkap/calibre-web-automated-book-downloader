@@ -2,6 +2,7 @@ package downloader
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -58,7 +59,7 @@ func TestDownloadURL(t *testing.T) {
 	// Create a test HTTP server
 	content := []byte("test book content")
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Length", "17")
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(content)))
 		w.WriteHeader(http.StatusOK)
 		w.Write(content)
 	}))
@@ -173,7 +174,7 @@ func TestDownloadBook(t *testing.T) {
 	// Create a test HTTP server
 	content := []byte("test epub content")
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Length", "17")
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(content)))
 		w.WriteHeader(http.StatusOK)
 		w.Write(content)
 	}))
@@ -262,7 +263,7 @@ func TestDownloadBookWithMultipleURLs(t *testing.T) {
 	// Create a test HTTP server that succeeds
 	content := []byte("test content")
 	successServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Length", "12")
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(content)))
 		w.WriteHeader(http.StatusOK)
 		w.Write(content)
 	}))

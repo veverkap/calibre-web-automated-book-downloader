@@ -18,6 +18,13 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	// MinDownloadSizeRatio is the minimum acceptable ratio of downloaded size to expected size
+	MinDownloadSizeRatio = 0.9
+	// TempDownloadExt is the extension used for files being downloaded
+	TempDownloadExt = ".crdownload"
+)
+
 // ProgressCallback is a function that receives download progress updates (0-100)
 type ProgressCallback func(progress float64)
 
@@ -146,7 +153,7 @@ func (d *Downloader) DownloadURL(ctx context.Context, url string, outputPath str
 	}
 
 	// Validate download size
-	if totalSize > 0 && downloaded < int64(float64(totalSize)*0.9) {
+	if totalSize > 0 && downloaded < int64(float64(totalSize)*MinDownloadSizeRatio) {
 		// Check if we got HTML instead of binary content
 		if resp.Header.Get("Content-Type") != "" && 
 		   strings.HasPrefix(resp.Header.Get("Content-Type"), "text/html") {
@@ -294,7 +301,7 @@ func (d *Downloader) DownloadBook(ctx context.Context, book *models.BookInfo, pr
 	}
 
 	// Move to ingest directory via intermediate path
-	intermediatePath := filepath.Join(d.config.IngestDir, fmt.Sprintf("%s.crdownload", book.ID))
+	intermediatePath := filepath.Join(d.config.IngestDir, fmt.Sprintf("%s%s", book.ID, TempDownloadExt))
 	finalPath := filepath.Join(d.config.IngestDir, bookName)
 
 	// Move to intermediate path first
