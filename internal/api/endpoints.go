@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -108,7 +109,7 @@ func (h *Handler) handleDownload(w http.ResponseWriter, r *http.Request) {
 // handleStatus handles status requests
 // GET /api/status
 func (h *Handler) handleStatus(w http.ResponseWriter, r *http.Request) {
-	status := h.bookQueue.GetStatus()
+	status := h.backend.GetQueueStatus()
 	
 	h.logger.Info("Status request")
 
@@ -129,8 +130,28 @@ func (h *Handler) handleLocalDownload(w http.ResponseWriter, r *http.Request) {
 
 	h.logger.Info("Local download request", zap.String("book_id", bookID))
 
-	// TODO: Implement file serving
-	h.writeError(w, http.StatusNotImplemented, "Local download not yet implemented")
+	// Get book data
+	data, book, err := h.backend.GetBookData(bookID)
+	if err != nil {
+		h.logger.Error("Failed to get book data",
+			zap.String("book_id", bookID),
+			zap.Error(err))
+		h.writeError(w, http.StatusNotFound, err.Error())
+		return
+	}
+
+	// Set appropriate headers
+	filename := book.Title
+	if book.Format != nil && *book.Format != "" {
+		filename = filename + "." + *book.Format
+	}
+
+	w.Header().Set("Content-Disposition", "attachment; filename=\""+filename+"\"")
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Content-Length", fmt.Sprintf("%d", len(data)))
+	
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
 }
 
 // handleCancelDownload handles download cancellation
@@ -144,7 +165,7 @@ func (h *Handler) handleCancelDownload(w http.ResponseWriter, r *http.Request) {
 
 	h.logger.Info("Cancel download request", zap.String("book_id", bookID))
 
-	success := h.bookQueue.CancelDownload(bookID)
+	success := h.backend.CancelDownload(bookID)
 	
 	if success {
 		h.writeJSON(w, http.StatusOK, map[string]interface{}{
@@ -179,7 +200,7 @@ func (h *Handler) handleSetPriority(w http.ResponseWriter, r *http.Request) {
 		zap.String("book_id", bookID),
 		zap.Int("priority", req.Priority))
 
-	success := h.bookQueue.SetPriority(bookID, req.Priority)
+	success := h.backend.SetBookPriority(bookID, req.Priority)
 	
 	if success {
 		h.writeJSON(w, http.StatusOK, map[string]interface{}{
@@ -205,7 +226,7 @@ func (h *Handler) handleReorderQueue(w http.ResponseWriter, r *http.Request) {
 
 	h.logger.Info("Reorder queue request", zap.Int("count", len(req)))
 
-	success := h.bookQueue.ReorderQueue(req)
+	success := h.backend.ReorderQueue(req)
 	
 	if success {
 		h.writeJSON(w, http.StatusOK, map[string]interface{}{
@@ -220,7 +241,7 @@ func (h *Handler) handleReorderQueue(w http.ResponseWriter, r *http.Request) {
 // handleQueueOrder handles queue order requests
 // GET /api/queue/order
 func (h *Handler) handleQueueOrder(w http.ResponseWriter, r *http.Request) {
-	order := h.bookQueue.GetQueueOrder()
+	order := h.backend.GetQueueOrder()
 	
 	h.logger.Info("Queue order request")
 
@@ -233,7 +254,7 @@ func (h *Handler) handleQueueOrder(w http.ResponseWriter, r *http.Request) {
 // handleActiveDownloads handles active downloads list
 // GET /api/downloads/active
 func (h *Handler) handleActiveDownloads(w http.ResponseWriter, r *http.Request) {
-	activeDownloads := h.bookQueue.GetActiveDownloads()
+	activeDownloads := h.backend.GetActiveDownloads()
 	
 	h.logger.Info("Active downloads request")
 
@@ -246,7 +267,7 @@ func (h *Handler) handleActiveDownloads(w http.ResponseWriter, r *http.Request) 
 // handleClearCompleted handles clearing completed downloads
 // DELETE /api/queue/clear
 func (h *Handler) handleClearCompleted(w http.ResponseWriter, r *http.Request) {
-	count := h.bookQueue.ClearCompleted()
+	count := h.backend.ClearCompleted()
 	
 	h.logger.Info("Clear completed request", zap.Int("cleared", count))
 

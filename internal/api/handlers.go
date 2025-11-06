@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/veverkap/calibre-web-automated-book-downloader/internal/auth"
+	"github.com/veverkap/calibre-web-automated-book-downloader/internal/backend"
 	"github.com/veverkap/calibre-web-automated-book-downloader/internal/config"
 	"github.com/veverkap/calibre-web-automated-book-downloader/internal/downloader"
 	"github.com/veverkap/calibre-web-automated-book-downloader/internal/models"
@@ -20,6 +21,7 @@ type Handler struct {
 	auth       *auth.Authenticator
 	bookQueue  *models.BookQueue
 	workerPool *downloader.WorkerPool
+	backend    *backend.Backend
 }
 
 // NewHandler creates a new API handler
@@ -27,6 +29,7 @@ func NewHandler(cfg *config.Config, logger *zap.Logger) *Handler {
 	authenticator := auth.NewAuthenticator(cfg.CWADBPath)
 	bookQueue := models.NewBookQueue(time.Duration(cfg.StatusTimeout) * time.Second)
 	workerPool := downloader.NewWorkerPool(cfg, logger, bookQueue)
+	backendSvc := backend.NewBackend(bookQueue, logger)
 	
 	// Start worker pool
 	workerPool.Start()
@@ -37,6 +40,7 @@ func NewHandler(cfg *config.Config, logger *zap.Logger) *Handler {
 		auth:       authenticator,
 		bookQueue:  bookQueue,
 		workerPool: workerPool,
+		backend:    backendSvc,
 	}
 }
 
