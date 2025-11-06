@@ -1,5 +1,8 @@
 # Stage 1: Build the Go binary
-FROM golang:1.24.9-alpine AS go-builder
+FROM golang:1.24-alpine AS go-builder
+
+# Install build dependencies including ca-certificates
+RUN apk add --no-cache gcc musl-dev ca-certificates
 
 # Set working directory
 WORKDIR /build
@@ -14,8 +17,7 @@ COPY internal/ ./internal/
 
 # Build the Go binary
 # CGO is needed for go-sqlite3
-RUN apk add --no-cache gcc musl-dev && \
-    CGO_ENABLED=1 go build -ldflags="-s -w" -o cwa-bd-server ./cmd/server
+RUN CGO_ENABLED=1 go build -ldflags="-s -w" -o cwa-bd-server ./cmd/server
 
 # Stage 2: Base runtime image with Python for Cloudflare bypass
 FROM python:3.10-slim AS base
