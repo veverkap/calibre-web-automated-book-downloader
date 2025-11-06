@@ -155,8 +155,10 @@ func DownloadURL(ctx context.Context, cfg *config.Config, link string, size stri
 		}
 	}
 
-	// Check if we got HTML instead of binary content
-	if downloaded*minDownloadRatio < totalSize*expectedSizeRatio {
+	// Check if we got significantly less data than expected
+	// If downloaded < 9% of expected (0.1 * totalSize < 0.9 * totalSize means downloaded < totalSize)
+	// This detects when we receive an error page instead of the actual file
+	if totalSize > 0 && downloaded < totalSize*expectedSizeRatio {
 		contentType := resp.Header.Get("Content-Type")
 		if strings.HasPrefix(contentType, "text/html") {
 			return nil, fmt.Errorf("failed to download content for %s. Found HTML content instead", link)

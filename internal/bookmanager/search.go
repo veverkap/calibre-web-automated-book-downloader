@@ -11,6 +11,12 @@ import (
 	"github.com/veverkap/calibre-web-automated-book-downloader/internal/config"
 	"github.com/veverkap/calibre-web-automated-book-downloader/internal/downloader"
 	"github.com/veverkap/calibre-web-automated-book-downloader/internal/models"
+	"golang.org/x/net/html"
+)
+
+const (
+	// textNodeType is the node type for text nodes in the HTML DOM
+	textNodeType = html.TextNode
 )
 
 // SearchBooks searches for books matching the query
@@ -171,7 +177,7 @@ func parseSearchResultRow(row *goquery.Selection) (*models.BookInfo, error) {
 		if span.Length() > 0 {
 			// Get the next sibling text node or text content
 			node := span.Get(0).NextSibling
-			if node != nil && node.Type == 3 { // Text node
+			if node != nil && node.Type == textNodeType {
 				text := strings.TrimSpace(node.Data)
 				if text != "" {
 					return &text

@@ -425,9 +425,10 @@ func getDownloadURL(ctx context.Context, cfg *config.Config, link, title string)
 		} else {
 			// Check for countdown
 			if countdown := doc.Find("span.js-partner-countdown"); countdown.Length() > 0 {
-				// TODO: Implement wait logic with cancellation
-				// For now, return error to avoid infinite recursion
-				return "", fmt.Errorf("download requires wait countdown - not yet implemented")
+				// Note: Countdown wait logic not implemented in Phase 3
+				// This will be implemented in Phase 4 when browser automation is integrated
+				// The Python version waits for the countdown and retries the same URL
+				return "", fmt.Errorf("download requires countdown wait - will be implemented in Phase 4 with browser automation")
 			}
 		}
 	} else {
