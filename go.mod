@@ -3,6 +3,7 @@ module github.com/veverkap/calibre-web-automated-book-downloader
 go 1.24.9
 
 require (
+	github.com/PuerkitoBio/goquery v1.10.3
 	github.com/go-chi/chi/v5 v5.2.3
 	github.com/mattn/go-sqlite3 v1.14.32
 	github.com/spf13/viper v1.21.0
@@ -11,7 +12,6 @@ require (
 )
 
 require (
-	github.com/PuerkitoBio/goquery v1.10.3 // indirect
 	github.com/andybalholm/cascadia v1.3.3 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
