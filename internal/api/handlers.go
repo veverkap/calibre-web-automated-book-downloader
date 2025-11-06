@@ -91,6 +91,12 @@ func (h *Handler) RegisterRoutes(r chi.Router) {
 // basicAuthMiddleware is a middleware for Basic Auth
 func (h *Handler) basicAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// If no database is configured, skip authentication
+		if h.config.CWADBPath == "" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		// Check if database path is set but invalid
 		if h.config.CWADBPath != "" {
 			// In production, you'd check if the file exists
