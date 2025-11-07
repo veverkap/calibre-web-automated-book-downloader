@@ -1,4 +1,25 @@
-# Use python-slim as the base image
+# Stage 1: Build the Go binary
+FROM golang:1.24-alpine AS go-builder
+
+# Install build dependencies including ca-certificates
+RUN apk add --no-cache gcc musl-dev ca-certificates
+
+# Set working directory
+WORKDIR /build
+
+# Copy go mod files first for better caching
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY cmd/ ./cmd/
+COPY internal/ ./internal/
+
+# Build the Go binary
+# CGO is needed for go-sqlite3
+RUN CGO_ENABLED=1 go build -ldflags="-s -w" -o cwa-bd-server ./cmd/server
+
+# Stage 2: Base runtime image with Python for Cloudflare bypass
 FROM python:3.10-slim AS base
 
 # Add build argument for version
@@ -59,16 +80,23 @@ RUN apt-get update && \
 # Set working directory
 WORKDIR /app
 
-# Install Python dependencies using pip
-# Upgrade pip first, then copy requirements and install
+# Copy Go binary from builder stage
+COPY --from=go-builder /build/cwa-bd-server /app/cwa-bd-server
+
+# Install minimal Python dependencies for Cloudflare bypass only
 # Copying requirements-base.txt separately leverages build cache
 COPY requirements-base.txt .
 RUN pip install --no-cache-dir -r requirements-base.txt && \
     # Clean root's pip cache
     rm -rf /root/.cache
 
-# Copy application code *after* dependencies are installed
-COPY . .
+# Copy only needed Python files (bypasser and support modules)
+COPY cloudflare_bypasser.py cloudflare_bypasser_external.py network.py config.py env.py logger.py ./
+COPY entrypoint.sh tor.sh genDebug.sh ./
+
+# Copy static files and templates (needed for Go server to serve UI)
+COPY static/ ./static/
+COPY templates/ ./templates/
 
 # Final setup: permissions and directories in one layer
 # Only creating directories and setting executable bits.

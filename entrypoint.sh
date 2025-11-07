@@ -105,13 +105,8 @@ change_ownership /tmp/cwa-book-downloader
 # Test write to all folders
 make_writable /cwa-book-ingest
 
-# Set the command to run based on the environment
-is_prod=$(echo "$APP_ENV" | tr '[:upper:]' '[:lower:]')
-if [ "$is_prod" = "prod" ]; then 
-    command="gunicorn -t 300 -b ${FLASK_HOST:-0.0.0.0}:${FLASK_PORT:-8084} app:app"
-else
-    command="python3 app.py"
-fi
+# Run the Go server
+command="/app/cwa-bd-server"
 
 # If DEBUG and not using an external bypass
 if [ "$DEBUG" = "true" ] && [ "$USING_EXTERNAL_BYPASSER" != "true" ]; then
@@ -166,14 +161,6 @@ if [ "$DEBUG" = "true" ] && [ "$USING_EXTERNAL_BYPASSER" != "true" ]; then
     set -e
     echo "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
 fi
-
-# Hacky way to verify /tmp has at least 1MB of space and is writable/readable
-echo "Verifying /tmp has enough space"
-rm -f /tmp/test.cwa-bd
-for i in {1..150000}; do printf "%04d\n" $i; done > /tmp/test.cwa-bd
-sum=$(python3 -c "print(sum(int(l.strip()) for l in open('/tmp/test.cwa-bd').readlines()))")
-[ "$sum" == 11250075000 ] && echo "Success: /tmp is writable" || (echo "Failure: /tmp is not writable" && exit 1)
-rm /tmp/test.cwa-bd
 
 echo "Running command: '$command' as '$USERNAME' in '$APP_ENV' mode"
 
